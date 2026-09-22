@@ -12,7 +12,14 @@ load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates') if os.path.exists(os.path.join(BASE_DIR, 'templates')) else os.path.join(os.getcwd(), 'templates')
-STATIC_DIR = os.path.join(BASE_DIR, 'static') if os.path.exists(os.path.join(BASE_DIR, 'static')) else os.path.join(os.getcwd(), 'static')
+
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+if not os.path.exists(STATIC_DIR):
+    STATIC_DIR = os.path.join(BASE_DIR, 'public', 'static')
+if not os.path.exists(STATIC_DIR):
+    STATIC_DIR = os.path.join(os.getcwd(), 'static')
+if not os.path.exists(STATIC_DIR):
+    STATIC_DIR = os.path.join(os.getcwd(), 'public', 'static')
 
 app = Flask(
     __name__,
@@ -107,8 +114,43 @@ def index():
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
-    """Serves static assets explicitly to avoid any serverless routing gaps."""
+    """Serves static assets explicitly with multiple directory fallbacks."""
+    for directory in [
+        STATIC_DIR,
+        os.path.join(BASE_DIR, 'public', 'static'),
+        os.path.join(BASE_DIR, 'public'),
+        os.path.join(os.getcwd(), 'static'),
+        os.path.join(os.getcwd(), 'public', 'static')
+    ]:
+        if os.path.exists(os.path.join(directory, filename)):
+            return send_from_directory(directory, filename)
     return send_from_directory(STATIC_DIR, filename)
+
+
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    for directory in [
+        os.path.join(BASE_DIR, 'public', 'css'),
+        os.path.join(STATIC_DIR, 'css'),
+        os.path.join(os.getcwd(), 'public', 'css'),
+        os.path.join(os.getcwd(), 'static', 'css')
+    ]:
+        if os.path.exists(os.path.join(directory, filename)):
+            return send_from_directory(directory, filename)
+    return send_from_directory(os.path.join(STATIC_DIR, 'css'), filename)
+
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    for directory in [
+        os.path.join(BASE_DIR, 'public', 'js'),
+        os.path.join(STATIC_DIR, 'js'),
+        os.path.join(os.getcwd(), 'public', 'js'),
+        os.path.join(os.getcwd(), 'static', 'js')
+    ]:
+        if os.path.exists(os.path.join(directory, filename)):
+            return send_from_directory(directory, filename)
+    return send_from_directory(os.path.join(STATIC_DIR, 'js'), filename)
 
 
 @app.route('/api/status', methods=['GET'])
