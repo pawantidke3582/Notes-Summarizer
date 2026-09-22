@@ -109,6 +109,14 @@ def extract_text_from_file(file_storage):
 @app.route('/api/index.py')
 def index():
     """Serves the main application page."""
+    if request.args.get('debug') == '1':
+        return jsonify({
+            "path": request.path,
+            "url": request.url,
+            "environ_PATH_INFO": request.environ.get('PATH_INFO'),
+            "environ_SCRIPT_NAME": request.environ.get('SCRIPT_NAME'),
+            "headers": dict(request.headers)
+        })
     return render_template('index.html')
 
 
