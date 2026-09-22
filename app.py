@@ -1,6 +1,6 @@
 import os
 import io
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import pypdf
@@ -11,11 +11,13 @@ from groq import Groq
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates') if os.path.exists(os.path.join(BASE_DIR, 'templates')) else os.path.join(os.getcwd(), 'templates')
+STATIC_DIR = os.path.join(BASE_DIR, 'static') if os.path.exists(os.path.join(BASE_DIR, 'static')) else os.path.join(os.getcwd(), 'static')
 
 app = Flask(
     __name__,
-    template_folder=os.path.join(BASE_DIR, 'templates'),
-    static_folder=os.path.join(BASE_DIR, 'static')
+    template_folder=TEMPLATES_DIR,
+    static_folder=STATIC_DIR
 )
 CORS(app)
 
@@ -94,9 +96,19 @@ def extract_text_from_file(file_storage):
 
 
 @app.route('/')
+@app.route('/index.html')
+@app.route('/api')
+@app.route('/api/index')
+@app.route('/api/index.py')
 def index():
     """Serves the main application page."""
     return render_template('index.html')
+
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serves static assets explicitly to avoid any serverless routing gaps."""
+    return send_from_directory(STATIC_DIR, filename)
 
 
 @app.route('/api/status', methods=['GET'])
